@@ -1,10 +1,13 @@
 import { observer } from "mobx-react-lite"
-import { useEffect, useState } from "react"
+import { CSSProperties, useState } from "react"
 import { ActionsPanel } from "../ActionsPanel/ActionsPanel"
 import { TextInput } from "../TextInput/TextInput"
-import { Store } from "../../store/store"
+import { Store, TodoObjectType } from "../../store/store"
 import { NoTodos } from "../NoTodos/NoTodos"
 import { SideBar } from "../SideBar/SideBar"
+import { FixedSizeList as List } from "react-window"
+import CenteredTabs from "../CenteredTabs/CenteredTabs"
+import { TodoItem } from "./TodoItem/TodoItem"
 import {
   Body,
   Container,
@@ -12,11 +15,12 @@ import {
   SideBarContainer,
   TodosContainer,
 } from "./styles"
-import CenteredTabs from "../CenteredTabs/CenteredTabs"
-import { TodoItem } from "./TodoItem/TodoItem"
+import { toJS } from "mobx"
 
 export const TodoList = observer(() => {
   let panelVisibility = Store.findAnySelectedTodo()
+  const todos = toJS(Store.todos)
+  const sortedTodos = toJS(Store.sortedTodos || [])
 
   const [isSearch, setIsSearch] = useState(false)
 
@@ -36,9 +40,6 @@ export const TodoList = observer(() => {
     Store.selectTodo({ value, index })
   }
 
-  const filterTodos = (value: boolean) => {
-    Store.filterTodos({ value })
-  }
   const deleteTodo = (index: number | undefined) => {
     Store.deleteTodo({ index })
   }
@@ -46,12 +47,41 @@ export const TodoList = observer(() => {
     Store.deleteSelectedTodos()
   }
 
+  const Row = ({
+    index,
+    style,
+    data,
+  }: {
+    index: number
+    style: CSSProperties
+    data: TodoObjectType[]
+  }) => {
+    return (
+      <div
+        style={{
+          ...style,
+          opacity: data[index]?.isComplete ? 0.3 : 1,
+        }}
+      >
+        <TodoItem
+          deleteTodo={deleteTodo}
+          todo={data[index].todo}
+          index={index}
+          isComplete={data[index].isComplete}
+          isSelected={data[index].isSelected}
+          completeTodo={completeTodo}
+          selectTodo={selectTodo}
+        />
+      </div>
+    )
+  }
+
   return (
     <>
       <Body>
         <CenteredTabs setIsSearch={setIsSearch} />
         <SideBarContainer>
-          <SideBar filterTodos={filterTodos} />
+          <SideBar />
         </SideBarContainer>
         <Container>
           <div>
@@ -70,35 +100,27 @@ export const TodoList = observer(() => {
         <TodosContainer>
           {Store.todos.length ? (
             Store.sortedTodos?.length ? (
-              Store.sortedTodos.map((item, index) => (
-                <div key={index} style={{ opacity: item.isComplete ? 0.3 : 1 }}>
-                  <TodoItem
-                    deleteTodo={deleteTodo}
-                    todo={item.todo}
-                    index={index}
-                    isComplete={item.isComplete}
-                    isSelected={item.isSelected}
-                    completeTodo={completeTodo}
-                    selectTodo={selectTodo}
-                  />
-                </div>
-              ))
+              <List
+                itemData={sortedTodos}
+                width={800}
+                height={500}
+                itemCount={Store.sortedTodos.length}
+                itemSize={140}
+              >
+                {Row}
+              </List>
             ) : Store.sortedTodos === null ? (
               <NoTodos text={"Nothing found"} />
             ) : (
-              Store.todos.map((item, index) => (
-                <div key={index} style={{ opacity: item.isComplete ? 0.3 : 1 }}>
-                  <TodoItem
-                    deleteTodo={deleteTodo}
-                    todo={item.todo}
-                    index={index}
-                    isComplete={item.isComplete}
-                    isSelected={item.isSelected}
-                    completeTodo={completeTodo}
-                    selectTodo={selectTodo}
-                  />
-                </div>
-              ))
+              <List
+                itemData={todos}
+                width={800}
+                height={500}
+                itemCount={Store.todos.length}
+                itemSize={140}
+              >
+                {Row}
+              </List>
             )
           ) : (
             <NoTodos text={"There is no Todos! Let's go rest!"} />

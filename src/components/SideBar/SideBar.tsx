@@ -3,11 +3,7 @@ import { useEffect, useState } from "react"
 import { Store } from "../../store/store"
 import { Body, Container, CounterContainer, Title } from "./styles"
 
-type PropsType = {
-  filterTodos: (value: boolean) => void
-}
-
-export const SideBar = ({ filterTodos }: PropsType) => {
+export const SideBar = () => {
   const [value, setValue] = useState("all")
 
   const doneTodos = Store.getDoneTodos()
@@ -17,11 +13,8 @@ export const SideBar = ({ filterTodos }: PropsType) => {
   }
 
   useEffect(() => {
-    if (value === "all") {
-      reset()
-    } else {
-      filterTodos(value === "done")
-    }
+    if (value === "all") return reset()
+    Store.filterTodos({ value: value === "done" })
   }, [value])
 
   const hanleChange = (e: React.ChangeEvent<unknown>, checked: boolean) => {

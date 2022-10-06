@@ -59,7 +59,7 @@ class TodoStore implements ITodoStore {
         ({
           todo: item.todo,
           isComplete: item.isSelected ? value : item.isComplete,
-          isSelected: item.isSelected,
+          isSelected: false,
         } as TodoObjectType)
     )
   }
